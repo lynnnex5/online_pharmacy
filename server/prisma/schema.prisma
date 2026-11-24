@@ -7,10 +7,124 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  password  String
-  createdAt DateTime @default(now())
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model customers {
+  customer_id    BigInt   @id @default(autoincrement())
+  full_name      String   @db.VarChar(100)
+  email          String   @unique @db.VarChar(255)
+  password_hash  String
+  phone          String?  @db.VarChar(20)
+  account_status String   @default("active") @db.VarChar(20)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  orders         orders[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model inventory {
+  inventory_id BigInt        @id @default(autoincrement())
+  pharmacy_id  BigInt
+  medicine_id  BigInt
+  quantity     Int           @default(0)
+  price        Decimal       @db.Decimal(10, 2)
+  updated_at   DateTime      @default(now()) @db.Timestamptz(6)
+  medicines    medicines     @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction)
+  pharmacies   pharmacies    @relation(fields: [pharmacy_id], references: [pharmacy_id], onDelete: NoAction, onUpdate: NoAction)
+  order_items  order_items[]
+
+  @@unique([pharmacy_id, medicine_id])
+}
+
+model medicines {
+  medicine_id         BigInt                @id @default(autoincrement())
+  medicine_name       String                @db.VarChar(150)
+  category            String?               @db.VarChar(100)
+  description         String?
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  inventory           inventory[]
+  stock_request_items stock_request_items[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model order_items {
+  order_item_id BigInt    @id @default(autoincrement())
+  order_id      BigInt
+  inventory_id  BigInt
+  quantity      Int
+  unit_price    Decimal   @db.Decimal(10, 2)
+  subtotal      Decimal   @db.Decimal(10, 2)
+  inventory     inventory @relation(fields: [inventory_id], references: [inventory_id], onDelete: NoAction, onUpdate: NoAction)
+  orders        orders    @relation(fields: [order_id], references: [order_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model orders {
+  order_id         BigInt        @id @default(autoincrement())
+  customer_id      BigInt
+  order_date       DateTime      @default(now()) @db.Timestamptz(6)
+  total_amount     Decimal       @default(0) @db.Decimal(10, 2)
+  order_status     String        @default("pending") @db.VarChar(20)
+  delivery_address String?
+  created_at       DateTime      @default(now()) @db.Timestamptz(6)
+  order_items      order_items[]
+  customers        customers     @relation(fields: [customer_id], references: [customer_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model pharmacies {
+  pharmacy_id                                                      BigInt           @id @default(autoincrement())
+  owner_name                                                       String           @db.VarChar(100)
+  owner_email                                                      String           @unique @db.VarChar(255)
+  password_hash                                                    String
+  pharmacy_name                                                    String           @db.VarChar(150)
+  registration_number                                              String           @unique @db.VarChar(100)
+  phone                                                            String           @db.VarChar(20)
+  email                                                            String?          @db.VarChar(255)
+  address                                                          String
+  county                                                           String           @db.VarChar(100)
+  latitude                                                         Decimal?         @db.Decimal(10, 7)
+  longitude                                                        Decimal?         @db.Decimal(10, 7)
+  approval_status                                                  String           @default("pending") @db.VarChar(20)
+  created_at                                                       DateTime         @default(now()) @db.Timestamptz(6)
+  inventory                                                        inventory[]
+  stock_requests_stock_requests_requesting_pharmacy_idTopharmacies stock_requests[] @relation("stock_requests_requesting_pharmacy_idTopharmacies")
+  stock_requests_stock_requests_supplying_pharmacy_idTopharmacies  stock_requests[] @relation("stock_requests_supplying_pharmacy_idTopharmacies")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model stock_request_items {
+  stock_request_item_id BigInt         @id @default(autoincrement())
+  stock_request_id      BigInt
+  medicine_id           BigInt
+  quantity              Int
+  medicines             medicines      @relation(fields: [medicine_id], references: [medicine_id], onDelete: NoAction, onUpdate: NoAction)
+  stock_requests        stock_requests @relation(fields: [stock_request_id], references: [stock_request_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model stock_requests {
+  stock_request_id                                             BigInt                @id @default(autoincrement())
+  requesting_pharmacy_id                                       BigInt
+  supplying_pharmacy_id                                        BigInt
+  request_status                                               String                @default("pending") @db.VarChar(20)
+  requested_at                                                 DateTime              @default(now()) @db.Timestamptz(6)
+  stock_request_items                                          stock_request_items[]
+  pharmacies_stock_requests_requesting_pharmacy_idTopharmacies pharmacies            @relation("stock_requests_requesting_pharmacy_idTopharmacies", fields: [requesting_pharmacy_id], references: [pharmacy_id], onDelete: NoAction, onUpdate: NoAction)
+  pharmacies_stock_requests_supplying_pharmacy_idTopharmacies  pharmacies            @relation("stock_requests_supplying_pharmacy_idTopharmacies", fields: [supplying_pharmacy_id], references: [pharmacy_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model pending_registrations {
+  id                BigInt   @id @default(autoincrement())
+  account_type      String   @db.VarChar(20)
+  email             String   @db.VarChar(255)
+  password_hash     String
+  registration_data Json
+  otp_hash          String
+  expires_at        DateTime @db.Timestamptz(6)
+  attempts          Int      @default(0)
+  last_sent_at      DateTime @default(now()) @db.Timestamptz(6)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([account_type, email], map: "pending_registrations_account_email_unique")
+  @@index([expires_at])
 }
