@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CartLink } from "./cart.jsx";
 
 const pharmacyData = [
   { id: "afya", name: "Afya Plus Pharmacy", area: "Town Centre", km: 0.8, hours: "8:00 AM – 9:00 PM", delivery: "30–45 min", icon: "✚", tone: "mint" },
@@ -26,7 +27,7 @@ const css = `
   @media(prefers-reduced-motion:reduce){.pharmacy-page *,.pharmacy-page *:before,.pharmacy-page *:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 `;
 
-export default function Pharmacies({ onNavigate }) {
+export default function Pharmacies({ user, onNavigate }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All pharmacies");
   const [sort, setSort] = useState("nearest");
@@ -100,6 +101,7 @@ export default function Pharmacies({ onNavigate }) {
           <p>Explore example pharmacy listings by area and distance. Contact the pharmacy to confirm its address, opening hours and current medicine availability.</p>
         </header>
 
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}><CartLink user={user} onNavigate={onNavigate} className="pharmacy-gps" label="View shared cart" /></div>
         <section className="pharmacy-toolbar pharmacy-in" aria-label="Search and sort pharmacies">
           <label className="pharmacy-search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search pharmacy or area" aria-label="Search pharmacies by name or area"/><button type="button" onClick={() => setQuery("")} aria-label="Clear pharmacy search" style={{border:0,background:'transparent',color:'#74877a',fontSize:16,cursor:'pointer'}}>×</button></label>
           <label style={{position:'absolute',width:1,height:1,padding:0,margin:-1,overflow:'hidden',clip:'rect(0,0,0,0)',whiteSpace:'nowrap',border:0}}>Sort pharmacies</label>
@@ -118,7 +120,7 @@ export default function Pharmacies({ onNavigate }) {
           {listings.length ? listings.map((pharmacy, index) => <article className="pharmacy-card" key={pharmacy.id} style={{animationDelay:`${Math.min(index*55,220)}ms`}}>
             <div className="pharmacy-card-top"><span className={`pharmacy-icon ${pharmacy.tone}`} aria-hidden="true">{pharmacy.icon}</span><div className="pharmacy-title"><h3>{pharmacy.name}</h3><p>{pharmacy.area} · {pharmacy.km.toFixed(1)} km away</p></div><span className="pharmacy-badge">SAMPLE</span></div>
             <div className="pharmacy-info"><div className="pharmacy-info-row"><span className="pharmacy-info-icon" aria-hidden="true">◷</span><span>{pharmacy.hours}</span></div><div className="pharmacy-info-row"><span className="pharmacy-info-icon" aria-hidden="true">↗</span><span>Illustrative delivery estimate: {pharmacy.delivery}</span></div></div>
-            <div className="pharmacy-card-actions"><button className="pharmacy-action" type="button" onClick={() => setSelected(pharmacy)}>Listing details</button><button className="pharmacy-action primary" type="button" onClick={() => showMap(pharmacy)}>Search map ↗</button></div>
+            <div className="pharmacy-card-actions"><button className="pharmacy-action" type="button" onClick={() => setSelected(pharmacy)}>Listing details</button><button className="pharmacy-action" type="button" onClick={() => onNavigate?.("find")}>Browse medicines</button><button className="pharmacy-action primary" type="button" onClick={() => showMap(pharmacy)}>Search map ↗</button></div>
           </article>) : <div className="pharmacy-empty">No sample pharmacies match this search. Try a different pharmacy name or area.</div>}
         </section>
 

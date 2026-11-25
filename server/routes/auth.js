@@ -9,7 +9,10 @@ import {
 } from 'node:crypto';
 
 import prisma from '../utils/prisma.js';
-import { sendVerificationEmail } from '../utils/email.js';
+import {
+  sendVerificationEmail,
+  sendWelcomeEmail,
+} from '../utils/email.js';
 
 const router = Router();
 
@@ -401,6 +404,7 @@ router.post('/verify-email', async (req, res) => {
 
     const { status, ...response } = result;
 
+    // Give verified customers a login token.
     if (status === 200 && response.accountType === 'customer') {
       response.token = jwt.sign(
         {
@@ -410,6 +414,16 @@ router.post('/verify-email', async (req, res) => {
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );
+    }
+
+    // Send welcome email after successful verification.
+    // Email failure must not undo the verified account.
+    if (status === 200) {
+      try {
+        await sendWelcomeEmail(email, response.accountType);
+      } catch (emailError) {
+        console.error('Welcome email error:', emailError);
+      }
     }
 
     return res.status(status).json(response);
@@ -543,3 +557,4 @@ router.post('/login', async (req, res) => {
 });
 
 export default router;
+ 

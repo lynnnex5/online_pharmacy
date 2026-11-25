@@ -746,19 +746,13 @@ function RegistrationForm({ onSwitch, onRegistered }) {
 
 // EMAIL VERIFICATION FORM
 function VerificationForm({ pending, onVerified, onBack }) {
-  const [digits, setDigits] = useState([
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-  ]);
-
+  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   const inputRefs = useRef([]);
+  const verificationStarted = useRef(false);
+  const verifyHandlerRef = useRef(null);
 
   const otp = digits.join("");
 
@@ -767,15 +761,30 @@ function VerificationForm({ pending, onVerified, onBack }) {
   }, []);
 
   function updateDigit(index, value) {
-    const digit = value.replace(/\D/g, "").slice(-1);
+    const cleaned = value.replace(/\D/g, "");
+
+    setError("");
+    verificationStarted.current = false;
+
+    // Handle autofill or multiple digits entered at once
+    if (cleaned.length > 1) {
+      const pasted = cleaned.slice(0, 6);
+
+      setDigits(
+        Array.from({ length: 6 }, (_, i) => pasted[i] || "")
+      );
+
+      inputRefs.current[Math.min(pasted.length, 5)]?.focus();
+      return;
+    }
+
+    const digit = cleaned.slice(-1);
 
     setDigits((current) => {
       const next = [...current];
       next[index] = digit;
       return next;
     });
-
-    setError("");
 
     if (digit && index < 5) {
       inputRefs.current[index + 1]?.focus();
@@ -808,17 +817,25 @@ function VerificationForm({ pending, onVerified, onBack }) {
       .replace(/\D/g, "")
       .slice(0, 6);
 
+    verificationStarted.current = false;
+    setError("");
+
     setDigits(
       Array.from({ length: 6 }, (_, index) => pasted[index] || "")
     );
-
-    setError("");
 
     inputRefs.current[Math.min(pasted.length, 5)]?.focus();
   }
 
   async function handleVerify(event) {
-    event.preventDefault();
+    if (event) {
+      event.preventDefault();
+    }
+
+    if (busy || verificationStarted.current) {
+      return;
+    }
+
     setError("");
 
     if (!/^\d{6}$/.test(otp)) {
@@ -826,6 +843,7 @@ function VerificationForm({ pending, onVerified, onBack }) {
       return;
     }
 
+    verificationStarted.current = true;
     setBusy(true);
 
     try {
@@ -838,10 +856,21 @@ function VerificationForm({ pending, onVerified, onBack }) {
       onVerified(result);
     } catch (err) {
       setError(err.message);
+      verificationStarted.current = false;
     } finally {
       setBusy(false);
     }
   }
+
+  // Keep the latest verification function available to auto-verification
+  verifyHandlerRef.current = handleVerify;
+
+  // Automatically verify when all six digits have been entered
+  useEffect(() => {
+    if (/^\d{6}$/.test(otp) && !busy) {
+      verifyHandlerRef.current?.();
+    }
+  }, [otp, busy]);
 
   return (
     <div className="pt-card">
@@ -876,6 +905,7 @@ function VerificationForm({ pending, onVerified, onBack }) {
               autoComplete={index === 0 ? "one-time-code" : "off"}
               maxLength={1}
               value={digits[index]}
+              disabled={busy}
               onChange={(event) =>
                 updateDigit(index, event.target.value)
               }
@@ -899,12 +929,16 @@ function VerificationForm({ pending, onVerified, onBack }) {
       </form>
 
       <p className="pt-description pt-small">
-        The code expires after 10 minutes. Check your spam folder if you
-        cannot find the email.
+        Your code expires after 10 minutes. Check your spam folder if
+        you cannot find the email.
       </p>
 
       <p className="pt-bottom-text">
-        <button type="button" onClick={onBack}>
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={busy}
+        >
           Back to registration
         </button>
       </p>

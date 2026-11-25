@@ -1,3 +1,5 @@
+import { CartLink } from "./cart.jsx";
+
 const css = `
   .for-pharmacies,.for-pharmacies *{box-sizing:border-box}
   .for-pharmacies{min-height:76vh;padding:34px 0 74px;background:linear-gradient(180deg,#f3faf5 0,#fff 360px);color:#17291d;font-family:'DM Sans','Segoe UI',system-ui,sans-serif;overflow:clip}
@@ -27,7 +29,7 @@ const css = `
   @media(prefers-reduced-motion:reduce){.for-pharmacies *,.for-pharmacies *:before,.for-pharmacies *:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 `;
 
-export default function ForPharmacies({ onNavigate }) {
+export default function ForPharmacies({ user, onNavigate }) {
   return (
     <main className="for-pharmacies">
       <style>{css}</style>
@@ -39,12 +41,13 @@ export default function ForPharmacies({ onNavigate }) {
           <div className="fp-cta-row">
             <a className="fp-button primary" href="#/login">Continue to existing sign-in →</a>
             <button className="fp-button" type="button" onClick={() => onNavigate?.("pharmacies")}>View customer pharmacy listings</button>
+            <CartLink user={user} onNavigate={onNavigate} className="fp-button" label="Customer cart" />
           </div>
         </header>
 
         <section className="fp-section" aria-labelledby="fp-account-title">
           <h2 id="fp-account-title">Your organization account stays separate</h2>
-          <p>Use the existing sign-in flow for your pharmacy or organization account. After signing in, continue to the organization view already set up in your app. This page does not replace that view or add account, inventory, restocking, payment, or order-management features.</p>
+          <p>Use the existing sign-in flow for your pharmacy or organization account. Customers can also browse the medicine catalogue and review their shared cart from this page. After signing in, continue to the organization view already set up in your app. This page does not replace that view or add account, inventory, restocking, payment, or order-management features.</p>
           <div className="fp-separation">
             <span className="fp-mark" aria-hidden="true">▣</span>
             <div><strong>This page is an information page—not your organization dashboard.</strong><p>Customer-facing medicine and pharmacy listings are separate from private organization account pages. No organization data or management controls are shown here.</p></div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CartLink, useCart } from "./cart.jsx";
 
 const categories = [
   { name: "All", icon: "✦" },
@@ -10,12 +11,12 @@ const categories = [
 ];
 
 const medicines = [
-  { id: "m1", name: "Paracetamol 500mg", detail: "Tablets · pack of 20", category: "Pain relief", price: 55, pharmacy: "Afya Plus Pharmacy", time: "25–35 min", tag: "Popular" },
-  { id: "m2", name: "Cetirizine 10mg", detail: "Tablets · pack of 10", category: "Cold & allergy", price: 80, pharmacy: "Karibu Chemist", time: "20–30 min", tag: "Good value" },
-  { id: "m3", name: "Vitamin C 1000mg", detail: "Effervescent · pack of 10", category: "Vitamins", price: 420, pharmacy: "Afya Plus Pharmacy", time: "25–35 min", tag: "Top rated" },
-  { id: "m4", name: "First aid essentials", detail: "Bandages · antiseptic · cotton", category: "First aid", price: 260, pharmacy: "Tumaini Pharmacy", time: "35–45 min", tag: "Everyday" },
-  { id: "m5", name: "Ibuprofen 400mg", detail: "Tablets · pack of 20", category: "Pain relief", price: 110, pharmacy: "Karibu Chemist", time: "20–30 min", tag: "Popular" },
-  { id: "m6", name: "Daily wellness care", detail: "Personal care essentials", category: "Daily care", price: 180, pharmacy: "Afya Plus Pharmacy", time: "25–35 min", tag: "Nearby" },
+  { id: "m1", name: "Paracetamol 500mg", detail: "Tablets · pack of 20", category: "Pain relief", price: 55, pharmacy: "Afya Plus Pharmacy", time: "25–35 min", tag: "Popular", description: "Illustrative pain-relief listing. Review the exact pack label and ask a pharmacist about suitability and safe use." },
+  { id: "m2", name: "Cetirizine 10mg", detail: "Tablets · pack of 10", category: "Cold & allergy", price: 80, pharmacy: "Karibu Chemist", time: "20–30 min", tag: "Good value", description: "Sample allergy-category listing. Similar symptoms can have different causes; seek professional advice if unsure." },
+  { id: "m3", name: "Vitamin C 1000mg", detail: "Effervescent · pack of 10", category: "Vitamins", price: 420, pharmacy: "Afya Plus Pharmacy", time: "25–35 min", tag: "Top rated", description: "Sample supplement listing. Follow the product label and check with a pharmacist about interactions or personal suitability." },
+  { id: "m4", name: "First aid essentials", detail: "Bandages · antiseptic · cotton", category: "First aid", price: 260, pharmacy: "Tumaini Pharmacy", time: "35–45 min", tag: "Everyday", description: "A fictional first-aid bundle for this presentation; item contents and availability must be confirmed with a pharmacy." },
+  { id: "m5", name: "Ibuprofen 400mg", detail: "Tablets · pack of 20", category: "Pain relief", price: 110, pharmacy: "Karibu Chemist", time: "20–30 min", tag: "Popular", description: "Sample medicine listing only. Check warnings and contraindications on the product label with a licensed pharmacist." },
+  { id: "m6", name: "Daily wellness care", detail: "Personal care essentials", category: "Daily care", price: 180, pharmacy: "Afya Plus Pharmacy", time: "25–35 min", tag: "Nearby", description: "Illustrative personal-care bundle. Exact products, quantities and pricing are not verified." },
 ];
 
 const pharmacies = [
@@ -37,7 +38,7 @@ function scrollToSection(id) {
 export default function Home({ user, onNavigate }) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
-  const [basket, setBasket] = useState([]);
+  const { count: cartCount, add: addToCart } = useCart(user);
   const [toast, setToast] = useState("");
   const [openFaq, setOpenFaq] = useState(0);
   const [location, setLocation] = useState(null);
@@ -101,8 +102,8 @@ export default function Home({ user, onNavigate }) {
   }, [query, activeCategory]);
 
   function addToBasket(item) {
-    setBasket((current) => [...current, item]);
-    setToast(`${item.name} added to your demo basket`);
+    addToCart({ ...item, form: item.detail, icon: item.category === "Vitamins" ? "☼" : item.category === "First aid" ? "＋" : "✚", stock: "Illustrative listing · confirm directly", rx: false });
+    setToast(`${item.name} added to your cart`);
     window.clearTimeout(window.__pharmalinkToastTimer);
     window.__pharmalinkToastTimer = window.setTimeout(() => setToast(""), 2400);
   }
@@ -231,11 +232,12 @@ export default function Home({ user, onNavigate }) {
             <h1>{firstName === "there" ? "Good to see you" : `Good to see you, ${firstName}`} <span aria-hidden="true">✦</span></h1>
             <p>Your nearby pharmacy picks, all in one place.</p>
           </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}><CartLink user={user} onNavigate={onNavigate} className="ph-location-action" label="Cart" />
           <div className="ph-location" aria-label="Your location settings">
             <span className="ph-location-pin" aria-hidden="true">⌖</span>
             <span><small>{location ? <><i className="ph-live-dot"/>LIVE LOCATION</> : "LOCATION"}</small><strong>{location ? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}` : "Set your area"}</strong></span>
             <span className="ph-location-actions"><button className="ph-location-action" type="button" onClick={toggleLiveLocation}>{watchingLocation ? "Pause GPS" : location ? "Refresh GPS" : "Use GPS"}</button>{location&&<button className="ph-location-action" type="button" onClick={()=>window.open(`https://www.google.com/maps/search/pharmacy/@${location.latitude},${location.longitude},14z`,"_blank","noopener,noreferrer")}>Map ↗</button>}</span>
-          </div>
+          </div></div>
         </header>
         {locationMessage&&<p className="ph-location-message" role="status" aria-live="polite">{locationMessage}</p>}
 
@@ -263,12 +265,12 @@ export default function Home({ user, onNavigate }) {
         <section id="find" className="ph-section" aria-labelledby="ph-find-title">
           <div className="ph-section-head">
             <div><div className="ph-eyebrow">Handy nearby finds</div><h2 id="ph-find-title">Popular right now</h2><p>Example catalogue listings · Sample prices in KES</p></div>
-            <button className="ph-text-button" type="button" onClick={() => onNavigate ? onNavigate("find") : scrollToSection("find")}>Find all medicines →</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}><CartLink user={user} onNavigate={onNavigate} className="ph-text-button" label={`Cart (${cartCount})`} /><button className="ph-text-button" type="button" onClick={() => onNavigate ? onNavigate("find") : scrollToSection("find")}>Find all medicines →</button></div>
           </div>
           <div className="ph-product-grid">
             {visibleMedicines.length ? visibleMedicines.map((item) => <article className="ph-product" key={item.id}>
               <div className="ph-product-art"><span className="ph-product-tag">{item.tag}</span><span className="ph-product-symbol" aria-hidden="true">{item.category === "Vitamins" ? "☼" : item.category === "First aid" ? "＋" : item.category === "Cold & allergy" ? "✿" : "✚"}</span></div>
-              <div className="ph-product-body"><h3>{item.name}</h3><p className="ph-product-detail">{item.detail}</p><div className="ph-product-pharmacy"><span aria-hidden="true">⌖</span><b>{item.pharmacy}</b><span>· {item.time}</span></div><div className="ph-product-bottom"><span className="ph-price">KES {item.price.toLocaleString("en-KE")} <small>sample</small></span><button className="ph-add" type="button" aria-label={`Add ${item.name} to demo basket`} onClick={() => addToBasket(item)}>+</button></div></div>
+              <div className="ph-product-body"><h3>{item.name}</h3><p className="ph-product-detail">{item.detail}</p><p className="ph-product-detail" style={{ lineHeight: 1.55, minHeight: 34 }}>{item.description}</p><div className="ph-product-pharmacy"><span aria-hidden="true">⌖</span><b>{item.pharmacy}</b><span>· {item.time}</span></div><div className="ph-product-bottom"><span className="ph-price">KES {item.price.toLocaleString("en-KE")} <small>sample</small></span><button className="ph-add" type="button" aria-label={`Add ${item.name} to your cart`} onClick={() => addToBasket(item)}>+</button></div></div>
             </article>) : <div className="ph-empty">No sample items match that search. Try another name or choose “All”.</div>}
           </div>
           <p className="ph-note">Sample catalogue only. This page does not confirm stock, provide a diagnosis, or process orders or payments. Ask a licensed pharmacist about medicine suitability and prescription requirements.</p>
@@ -297,7 +299,7 @@ export default function Home({ user, onNavigate }) {
           </div>
         </section>
       </div>
-      {basket.length > 0 && <div className="ph-toast" role="status" aria-live="polite">{toast || `${basket.length} item${basket.length === 1 ? "" : "s"} in your demo basket`}</div>}
+      {toast && <div className="ph-toast" role="status" aria-live="polite">{toast} · {cartCount} item{cartCount === 1 ? "" : "s"} in cart <button type="button" onClick={() => onNavigate ? onNavigate("cart") : (window.location.hash = "#/cart")} style={{ marginLeft: 9, border: 0, borderRadius: 8, padding: "5px 8px", background: "#159b58", color: "#fff", fontWeight: 850, cursor: "pointer" }}>View cart</button></div>}
     </main>
   );
 }

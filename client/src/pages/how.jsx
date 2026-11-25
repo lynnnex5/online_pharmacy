@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CartLink } from "./cart.jsx";
 
 const steps = [
   {
@@ -12,11 +13,18 @@ const steps = [
     number: "02",
     title: "Explore the listings",
     body: "Use the medicine search, categories and pharmacy filters to explore the example catalogue.",
-    detail: "The current names, prices, distances, stock, hours and delivery estimates are sample content. GPS can open a map search, but it does not turn sample listings into verified nearby stores.",
+    detail: "The current names, prices, distances, stock, hours and delivery estimates are sample content. Selecting a medicine from any Home or Find Medicine card adds it to your shared cart. GPS can open a map search, but it does not turn sample listings into verified nearby stores.",
     icon: "▤",
   },
   {
     number: "03",
+    title: "Review your shared cart",
+    body: "Select a medicine card to add it to the same cart used across Home and Find Medicine.",
+    detail: "The cart groups identical product-and-pharmacy listings, shows quantity and sample line totals, and keeps its contents in this browser. It is not an order or a reservation.",
+    icon: "▣",
+  },
+  {
+    number: "04",
     title: "Check with the pharmacy",
     body: "Before travelling or making a medicine decision, confirm the details with a licensed pharmacy.",
     detail: "Ask about the actual product, current price and availability, opening hours, and any prescription requirements. Talk to a pharmacist or clinician about whether a medicine is right for you.",
@@ -50,7 +58,7 @@ const css = `
   @media(prefers-reduced-motion:reduce){.hiw-page *,.hiw-page *:before,.hiw-page *:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 `;
 
-export default function HowItWorks({ onNavigate }) {
+export default function HowItWorks({ user, onNavigate }) {
   const [open, setOpen] = useState(0);
 
   return (
@@ -91,6 +99,7 @@ export default function HowItWorks({ onNavigate }) {
           <div className="hiw-buttons">
             <button className="hiw-button" type="button" onClick={() => onNavigate?.("find")}>Find medicine</button>
             <button className="hiw-button secondary" type="button" onClick={() => onNavigate?.("pharmacies")}>Browse pharmacies</button>
+            <CartLink user={user} onNavigate={onNavigate} className="hiw-button secondary" label="Open cart" />
           </div>
         </aside>
       </div>
